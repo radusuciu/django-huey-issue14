@@ -1,0 +1,36 @@
+x-app: &app
+  build: .
+  depends_on:
+    - postgres
+    - redis
+  env_file:
+    - postgres.env
+  environment:
+    - REDIS_HOST=redis
+  volumes:
+    - .:/app
+    - /app/.venv
+  entrypoint: ["python", "issue14/manage.py"]  
+
+services:
+  app:
+    <<: *app
+    ports:
+      - "8000:8000"
+    command: ["runserver", "0.0.0.0:8000"]
+
+  worker:
+    <<: *app
+    command: ["djangohuey"]
+
+  fooworker:
+    <<: *app
+    command: ["djangohuey", "--queue", "foo"]
+
+  postgres:
+    image: postgres:14-alpine
+    env_file:
+      - postgres.env
+
+  redis:
+    image: redis:6-alpine
